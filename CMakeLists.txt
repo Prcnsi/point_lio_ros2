@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.14)  # Recommended for ROS 2
 project(point_lio)
 
-cmake_policy(SET CMP0148 NEW)
 
 # Use C++14
 if(NOT CMAKE_CXX_STANDARD)
