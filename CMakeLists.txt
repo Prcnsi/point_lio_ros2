@@ -75,7 +75,6 @@ ament_target_dependencies(pointlio_mapping
         geometry_msgs
         nav_msgs
         sensor_msgs
-        pcl_ros
         pcl_conversions
         tf2_ros
         visualization_msgs
@@ -101,7 +100,6 @@ ament_export_dependencies(rclcpp
   geometry_msgs
   nav_msgs
   sensor_msgs
-  pcl_ros
   pcl_conversions
   tf2_ros
   visualization_msgs
