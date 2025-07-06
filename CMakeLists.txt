@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.14)  # Recommended for ROS 2
 project(point_lio)
+
+cmake_policy(SET CMP0148 NEW)
 
 # Use C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -7,7 +9,7 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions" )
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
 
 # Compiler settings for performance and threading
 add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
@@ -42,14 +44,11 @@ find_package(rclpy REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
-# find_package(livox_ros_driver2 REQUIRED)
-
 find_package(Eigen3 REQUIRED)
-
+find_package(PCL REQUIRED COMPONENTS common io)  # Core PCL components
 
 # OpenMP
 find_package(OpenMP QUIET)
@@ -58,55 +57,72 @@ if(OPENMP_FOUND)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 endif()
 
-find_package(PythonLibs REQUIRED) # Consider using Pybind11 for ROS2
+# Python & matplotlibcpp
+find_package(PythonLibs REQUIRED)
 find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
 
+# Include directories
 include_directories(
-        include
-        ${EIGEN3_INCLUDE_DIR}
-        ${PYTHON_INCLUDE_DIRS}
+  include
+  ${EIGEN3_INCLUDE_DIR}
+  ${PYTHON_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
-# Declare a ROS2 executable
-add_executable(pointlio_mapping src/laserMapping.cpp include/ikd-Tree/ikd_Tree.cpp src/parameters.cpp src/preprocess.cpp src/Estimator.cpp)
+# Declare executable
+add_executable(pointlio_mapping
+  src/laserMapping.cpp
+  include/ikd-Tree/ikd_Tree.cpp
+  src/parameters.cpp
+  src/preprocess.cpp
+  src/Estimator.cpp
+)
+
+# Link dependencies
 ament_target_dependencies(pointlio_mapping
-        rclcpp
-        rclpy
-        geometry_msgs
-        nav_msgs
-        sensor_msgs
-        pcl_ros
-        pcl_conversions
-        tf2_ros
-        visualization_msgs
-        # livox_ros_driver2
-)
-target_link_libraries(pointlio_mapping ${PYTHON_LIBRARIES})
-target_include_directories(pointlio_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
-
-# Install the executable
-install(TARGETS
-        pointlio_mapping
-        DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-        DIRECTORY config launch rviz_cfg
-        DESTINATION share/${PROJECT_NAME}
-)
-
-# Export dependencies
-ament_export_dependencies(rclcpp
+  rclcpp
   rclpy
   geometry_msgs
   nav_msgs
   sensor_msgs
-  pcl_ros
   pcl_conversions
   tf2_ros
   visualization_msgs
-  # livox_ros_driver2
+)
+
+target_link_libraries(pointlio_mapping
+  ${PYTHON_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+target_include_directories(pointlio_mapping PRIVATE
+  ${PYTHON_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+)
+
+# Install
+install(TARGETS
+  pointlio_mapping
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY config launch rviz_cfg
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Export dependencies
+ament_export_dependencies(
+  rclcpp
+  rclpy
+  geometry_msgs
+  nav_msgs
+  sensor_msgs
+  pcl_conversions
+  tf2_ros
+  visualization_msgs
   Eigen3
+  PCL
 )
 
 ament_package()
