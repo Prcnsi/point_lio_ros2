@@ -8,6 +8,7 @@
 #include <math.h>
 #include <algorithm>
 #include <memory.h>
+#include <pcl/point_types.h>
 
 #define EPSS 1e-6
 #define Minimal_Unbalanced_Tree_Size 10
