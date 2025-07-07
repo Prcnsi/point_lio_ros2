@@ -79,6 +79,10 @@ void Preprocess::process(const sensor_msgs::msg::PointCloud2::SharedPtr &msg, Po
             unilidar_handler(msg);
             break;
 
+        case MID360:
+            hesai_handler(msg);
+            break;
+
         default:
             printf("Error LiDAR Type");
             break;
