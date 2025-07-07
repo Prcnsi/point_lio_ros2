@@ -32,16 +32,16 @@ Preprocess::Preprocess()
 
 Preprocess::~Preprocess() {}
 
-void Preprocess::set(bool feat_en, int lid_type, double bld, int pfilt_num) {
-    lidar_type = lid_type;
-    blind = bld;
-    point_filter_num = pfilt_num;
-}
-
-// void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg, PointCloudXYZI::Ptr &pcl_out) {
-//     avia_handler(msg);
-//     *pcl_out = pl_surf;
+// void Preprocess::set(bool feat_en, int lid_type, double bld, int pfilt_num) {
+//     lidar_type = lid_type;
+//     blind = bld;
+//     point_filter_num = pfilt_num;
 // }
+
+void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg, PointCloudXYZI::Ptr &pcl_out) {
+    avia_handler(msg);
+    *pcl_out = pl_surf;
+}
 
 void Preprocess::process(const sensor_msgs::msg::PointCloud2::SharedPtr &msg, PointCloudXYZI::Ptr &pcl_out) {
     switch (time_unit) {
