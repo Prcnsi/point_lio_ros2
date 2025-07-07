@@ -11,7 +11,7 @@ typedef pcl::PointXYZINormal PointType;
 typedef pcl::PointCloud<PointType> PointCloudXYZI;
 
 enum LID_TYPE {
-    AVIA = 1, VELO16, OUST64, HESAIxt32, UNILIDAR
+    AVIA = 1, VELO16, OUST64, HESAIxt32, UNILIDAR, MID360
 }; //{1, 2, 3, 4}
 enum TIME_UNIT {
     SEC = 0, MS = 1, US = 2, NS = 3
