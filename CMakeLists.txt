@@ -88,6 +88,7 @@ ament_target_dependencies(pointlio_mapping
   pcl_conversions
   tf2_ros
   visualization_msgs
+  livox_ros_driver2  
 )
 
 target_link_libraries(pointlio_mapping
