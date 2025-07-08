@@ -34,7 +34,7 @@ def generate_launch_description():
 
     # Node definition for laserMapping with Point-LIO
     laser_mapping_node = Node(
-        package='point_lio',
+        package='point_lio_ros2',
         executable='pointlio_mapping',
         name='laserMapping',
         output='screen',
@@ -48,7 +48,7 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz',
         arguments=['-d', PathJoinSubstitution([
-            FindPackageShare('point_lio'),
+            FindPackageShare('point_lio_ros2'),
             'rviz_cfg', 'loam_livox.rviz'
         ])],
         condition=IfCondition(LaunchConfiguration('rviz')),
