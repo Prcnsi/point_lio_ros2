@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.14)  # Recommended for ROS 2
-project(point_lio)
+# define the project name
+project(point_lio_ros2)
 
 
 # Use C++14
