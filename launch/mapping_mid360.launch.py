@@ -15,7 +15,7 @@ def generate_launch_description():
     # Node parameters, including those from the YAML configuration file
     laser_mapping_params = [
         PathJoinSubstitution([
-            FindPackageShare('point_lio'),
+            FindPackageShare('point_lio_ros2'),
             'config', 'mid360.yaml'
         ]),
         {
