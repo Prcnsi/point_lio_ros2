@@ -62,33 +62,33 @@ void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg
 //             break;
 //     }
 
-    switch (lidar_type) {
-        case OUST64:
-            oust64_handler(msg);
-            break;
+//     switch (lidar_type) {
+//         case OUST64:
+//             oust64_handler(msg);
+//             break;
 
-        case VELO16:
-            velodyne_handler(msg);
-            break;
+//         case VELO16:
+//             velodyne_handler(msg);
+//             break;
 
-        case HESAIxt32:
-            hesai_handler(msg);
-            break;
+//         case HESAIxt32:
+//             hesai_handler(msg);
+//             break;
 
-        case UNILIDAR:
-            unilidar_handler(msg);
-            break;
+//         case UNILIDAR:
+//             unilidar_handler(msg);
+//             break;
 
-        case MID360:
-            avia_handler(msg);
-            break;
+//         case MID360:
+//             avia_handler(msg);
+//             break;
 
-        default:
-            printf("Error LiDAR Type");
-            break;
-    }
-    *pcl_out = pl_surf;
-}
+//         default:
+//             printf("Error LiDAR Type");
+//             break;
+//     }
+//     *pcl_out = pl_surf;
+// }
 
 void Preprocess::avia_handler(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg) {
     pl_surf.clear();
