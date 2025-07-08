@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>point_lio</name>
+  <name>point_lio_ros2</name>
   <version>0.0.0</version>
   <description>
     This is a modified version of LOAM which is original algorithm
