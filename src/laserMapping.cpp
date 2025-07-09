@@ -343,7 +343,7 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
     double timestamp = get_time_sec(msg->header.stamp);
 
     mtx_buffer.lock();
-
+    // this error occurred when imu time is not synchronized => just add the --clock option in ros2 bag play!
     if (timestamp < last_timestamp_imu) {
         RCLCPP_ERROR(logger, "imu loop back, clear deque");
         // imu_deque.shrink_to_fit();
