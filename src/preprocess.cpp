@@ -90,6 +90,25 @@ void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg
 //     *pcl_out = pl_surf;
 // }
 
+void Preprocess::mid360_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
+  pl_surf.clear();
+  pl_corn.clear();
+  pl_full.clear();
+
+  pcl::PointCloud<PointXYZIT> pl_raw;
+  pcl::fromROSMsg(*msg, pl_raw);
+  pl_surf.reserve(pl_raw.points.size());
+
+  double head_time = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
+  for (auto &p : pl_raw.points) {
+    PointType pt;
+    pt.x = p.x; pt.y = p.y; pt.z = p.z;
+    pt.intensity = p.intensity;
+    pt.curvature = (p.time) * time_unit_scale;  
+    pl_surf.push_back(pt);
+  }
+}
+
 void Preprocess::avia_handler(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg) {
     pl_surf.clear();
     pl_corn.clear();
