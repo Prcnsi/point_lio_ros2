@@ -2,7 +2,24 @@
 
 #define RETURN0     0x00
 #define RETURN0AND1 0x10
+#include <pcl/point_types.h>
+#include <pcl/impl/point_traits.hpp>
+#include <pcl/point_cloud.h> 
 
+struct PointXYZIT {
+  PCL_ADD_POINT4D;
+  float intensity;
+  float time;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIT,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (float, intensity, intensity)
+    (float, time, time)
+)
 Preprocess::Preprocess()
         : lidar_type(AVIA), blind(0.01), point_filter_num(1) {
     inf_bound = 10;
