@@ -359,10 +359,16 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
 }
 
 bool sync_packages(MeasureGroup &meas) {
+    cout << imu_en
+    // imu 안 쓰는 경우
     if (!imu_en) {
+        // lidar만 쓰니까 -> lidar 버퍼가 비었는지 확인
+        cout << "imu 안 쓰고, lidar만 쓰는 if문" << std::endl;
         if (!lidar_buffer.empty()) {
+            cout << "lidar buffer is not empty" << std::endl;
             meas.lidar = lidar_buffer.front();
             meas.lidar_beg_time = time_buffer.front();
+            // 안 비었으면 pop
             time_buffer.pop_front();
             lidar_buffer.pop_front();
             if (meas.lidar->points.size() < 1) {
@@ -371,7 +377,9 @@ bool sync_packages(MeasureGroup &meas) {
             }
             double end_time = meas.lidar->points.back().curvature;
             for (auto pt: meas.lidar->points) {
+                // 이건 시간이 잘못 설정된 경우
                 if (pt.curvature > end_time) {
+                    cout << "pt.curvature > end_time" << std::endl;
                     end_time = pt.curvature;
                 }
             }
@@ -379,22 +387,26 @@ bool sync_packages(MeasureGroup &meas) {
             meas.lidar_last_time = lidar_end_time;
             return true;
         }
+        cout << "imu, lidar 둘 다 비어서 종료" << std::endl;
         return false;
     }
 
     if (lidar_buffer.empty() || imu_deque.empty()) {
+        cout <<"lidar랑 imu 둘 중에 하나라도 비어서 종료!" <<std::endl;
         return false;
     }
 
     /*** push a lidar scan ***/
+    // 처음 LiDAR 데이터를 처리할 때 1회만 처리
     if (!lidar_pushed) {
         meas.lidar = lidar_buffer.front();
         if (meas.lidar->points.size() < 1) {
-            cout << "lose lidar" << endl;
+            cout << "lose lidar" << std::endl;
             lidar_buffer.pop_front();
             time_buffer.pop_front();
             return false;
         }
+        // LiDAR의 첫, 마지막 값을 들고옴
         meas.lidar_beg_time = time_buffer.front();
         double end_time = meas.lidar->points.back().curvature;
         for (auto pt: meas.lidar->points) {
@@ -409,10 +421,13 @@ bool sync_packages(MeasureGroup &meas) {
     }
 
     if (last_timestamp_imu < lidar_end_time) {
+        cout<<"LiDAR와 IMU 시간이 안 맞아서 종료" <<std::endl;
         return false;
     }
     /*** push imu data, and pop from imu buffer ***/
-    if (p_imu->imu_need_init_) {
+    //  IMU 데이터를 imu_deque에서 꺼내 meas.imu에 추가하고, 
+    // LiDAR 종료 시간(lidar_end_time)에 맞춰 데이터를 동기화
+    if (p_imu->imu_need_init_) { 
         double imu_time = get_time_sec(imu_deque.front()->header.stamp);
         meas.imu.shrink_to_fit();
         while ((!imu_deque.empty()) && (imu_time < lidar_end_time)) {
@@ -424,7 +439,11 @@ bool sync_packages(MeasureGroup &meas) {
             imu_next = *(imu_deque.front());
             imu_deque.pop_front();
         }
-    } else if (!init_map) {
+        cout <<"imu-lidar 시간 동기화 완료"<<std::endl;
+    } else if (!init_map) { 
+        // 맵 초기화가 필요할 때(IMU 데이터가 초기화되어야 할 때), 
+        // IMU 데이터를 imu_deque에서 꺼내어 meas.imu에 추가하고, 
+        // LiDAR 종료 시간(lidar_end_time)에 맞춰 데이터를 동기화
         double imu_time = get_time_sec(imu_deque.front()->header.stamp);
         meas.imu.shrink_to_fit();
         meas.imu.emplace_back(imu_last_ptr);
@@ -438,6 +457,7 @@ bool sync_packages(MeasureGroup &meas) {
             imu_next = *(imu_deque.front());
             imu_deque.pop_front();
         }
+        cout <<"imu-map 시간 동기화 완료"<<std::endl;
     }
 
     lidar_buffer.pop_front();
