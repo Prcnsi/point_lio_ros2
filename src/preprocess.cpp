@@ -3,8 +3,8 @@
 #define RETURN0     0x00
 #define RETURN0AND1 0x10
 #include <pcl/point_types.h>
-#include <pcl/impl/point_traits.hpp>
-#include <pcl/point_cloud.h> 
+#include <pcl/point_cloud.h>
+#include <pcl/register_point_struct.h> 
 
 struct PointXYZIT {
   PCL_ADD_POINT4D;
