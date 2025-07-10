@@ -198,6 +198,8 @@ void lasermap_fov_segment() {
 }
 
 void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    double lidar_time = get_time_sec(msg->timestamp);
+    cout << "[lidar_cbk] timestamp: " << lidar_time << std::endl;
     mtx_buffer.lock();
     scan_count++;
     double preprocess_start_time = omp_get_wtime();
@@ -342,6 +344,8 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 
 void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
     cout <<"imu_cbk 진입"<<std::endl;
+    double timestamp = get_time_sec(msg->timestamp);
+    cout << "[imu_cbk] timestamp: " << timestamp << std::endl;
     publish_count++;
     sensor_msgs::msg::Imu::SharedPtr msg(new sensor_msgs::msg::Imu(*msg_in));
 
@@ -367,6 +371,10 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
 
 bool sync_packages(MeasureGroup &meas) {
     cout << "sync sync_packages 진입" <<std::endl;
+    cout << std::fixed << std::setprecision(9);
+    cout << "[sync_packages] last_timestamp_imu: " << last_timestamp_imu 
+        << ", lidar_end_time: " << lidar_end_time 
+        << ", diff: " << (last_timestamp_imu - lidar_end_time) << " sec" << std::endl;
     // imu 안 쓰는 경우
     if (!imu_en) {
         // lidar만 쓰니까 -> lidar 버퍼가 비었는지 확인
