@@ -359,7 +359,7 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
 }
 
 bool sync_packages(MeasureGroup &meas) {
-    cout << sync sync_packages 진입 <<std::endl;
+    cout << "sync sync_packages 진입" <<std::endl;
     // imu 안 쓰는 경우
     if (!imu_en) {
         // lidar만 쓰니까 -> lidar 버퍼가 비었는지 확인
