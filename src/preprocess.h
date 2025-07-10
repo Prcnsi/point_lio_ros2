@@ -1,6 +1,11 @@
 #include <rclcpp/rclcpp.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+
+#include <pcl/point_types.h>
+#include <pcl/register_point_struct.h>
+#include <cstdint>
+
 // #include <livox_ros_driver2/msg/custom_msg.hpp>
 
 using namespace std;
@@ -68,6 +73,29 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(velodyne_ros::Point,
 /**
  * @brief Unilidar Point Type
  */
+
+namespace mid360_ros {
+    struct EIGEN_ALIGN16 Point {
+        PCL_ADD_POINT4D;
+        float intensity;
+        std::uint8_t tag;
+        std::uint8_t line;
+        double timestamp;
+
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    };
+}  // namespace mid360_ros
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(mid360_ros::Point,
+                                  (float, x, x)
+                                  (float, y, y)
+                                  (float, z, z)
+                                  (float, intensity, intensity)
+                                  (std::uint8_t, tag, tag)
+                                  (std::uint8_t, line, line)
+                                  (double, timestamp, timestamp)
+)
+
 namespace unilidar_ros {
     struct EIGEN_ALIGN16 Point {
         PCL_ADD_POINT4D
