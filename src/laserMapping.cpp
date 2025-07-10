@@ -271,7 +271,7 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg) {
     double preprocess_start_time = omp_get_wtime();
     scan_count++;
     if (get_time_sec(msg->header.stamp) < last_timestamp_lidar) {
-        RCLCPP_ERROR(logger, "lidar loop back, clear buffer");
+        RCLCPP_ERROR(logger, "lidar loop back, ");
 
         mtx_buffer.unlock();
         sig_buffer.notify_all();
@@ -293,7 +293,7 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg) {
                 cut_frame_time_interval) {
                 if (ptr_div->size() < 1) continue;
                 PointCloudXYZI::Ptr ptr_div_i(new PointCloudXYZI());
-                // cout << "ptr div num:" << ptr_div->size() << endl;
+                cout << "ptr div num:" << ptr_div->size() << endl;
                 *ptr_div_i = *ptr_div;
                 // cout << "ptr div i num:" << ptr_div_i->size() << endl;
                 lidar_buffer.push_back(ptr_div_i);
@@ -815,12 +815,14 @@ int main(int argc, char **argv) {
     rclcpp::Rate rate(5000);
     while (rclcpp::ok()) {
         if (flg_exit) break;
+        cout << "inside main while loop" << endl;
         //ros::spinOnce();
         rclcpp::executors::SingleThreadedExecutor executor;
         executor.add_node(nh);
         executor.spin_some(); // 处理当前可用的回调
 
         if (sync_packages(Measures)) {
+            cout << "main if문 <sync_packages(Measures)>에는 진입 성공" <<endl;
             if (flg_first_scan) {
                 first_lidar_time = Measures.lidar_beg_time;
                 flg_first_scan = false;
@@ -841,19 +843,22 @@ int main(int argc, char **argv) {
             t0 = omp_get_wtime();
 
             p_imu->Process(Measures, feats_undistort);
-
+            
+            // 이 코드는 IMU 데이터를 처리하고, gravity_align가 활성화되어 있으면 중력 정렬을 수행
             if (feats_undistort->empty() || feats_undistort == nullptr) {
                 continue;
             }
             if (imu_en) {
                 if (!p_imu->gravity_align_) {
                     while (Measures.lidar_beg_time > get_time_sec(imu_next.header.stamp)) {
+                        //  IMU 데이터를 사용하여 중력 방향을 정렬
                         imu_last = imu_next;
                         imu_next = *(imu_deque.front());
                         imu_deque.pop_front();
                         // imu_deque.pop();
                     }
                     if (non_station_start) {
+                        //  가속도, 회전 상태를 계산하여 필터의 입력으로 사용
                         state_in.gravity << VEC_FROM_ARRAY(gravity_init);
                         state_out.gravity << VEC_FROM_ARRAY(gravity_init);
                         state_out.acc << VEC_FROM_ARRAY(gravity_init);
@@ -873,6 +878,7 @@ int main(int argc, char **argv) {
                         state_out.rot.normalize();
                         state_out.acc = -rot_init.transpose() * state_out.gravity;
                     }
+                    // 그에 따른 상태(state_in, state_out)를 업데이트
                     kf_input.change_x(state_in);
                     kf_output.change_x(state_out);
                 }
@@ -884,6 +890,8 @@ int main(int argc, char **argv) {
                     state_out.acc *= -1;
                 }
             }
+
+            cout << "imu 체크 조건문까지 완료" <<endl;
             /*** Segment the map in lidar FOV ***/
             lasermap_fov_segment();
             /*** downsample the feature points in a scan ***/
@@ -899,6 +907,7 @@ int main(int argc, char **argv) {
             time_seq = time_compressing<int>(feats_down_body);
             feats_down_size = feats_down_body->points.size();
 
+            cout << "lidar FOV segment까지 완료" <<endl;
             /*** initialize the map kdtree ***/
             if (!init_map) {
                 if (ikdtree.Root_Node == nullptr) //
@@ -928,12 +937,14 @@ int main(int argc, char **argv) {
 
             t2 = omp_get_wtime();
 
+            cout << "Kalman filter update 완료" <<endl;
             /*** iterated state estimation ***/
             crossmat_list.reserve(feats_down_size);
             pbody_list.reserve(feats_down_size);
             // pbody_ext_list.reserve(feats_down_size);
 
             for (size_t i = 0; i < feats_down_body->size(); i++) {
+                cout << "반복적인 state estimation 시작" <<endl;
                 V3D point_this(feats_down_body->points[i].x,
                                feats_down_body->points[i].y,
                                feats_down_body->points[i].z);
@@ -953,6 +964,7 @@ int main(int argc, char **argv) {
             }
 
             if (!use_imu_as_input) {
+                cout << "imu가 input으로 안 들어왔다" <<endl;
                 bool imu_upda_cov = false;
                 effct_feat_num = 0;
                 /**** point by point update ****/
@@ -1092,6 +1104,7 @@ int main(int argc, char **argv) {
                     // cout << "pbp output effect feat num:" << effct_feat_num << endl;
                 }
             } else {
+                cout << "imu가 입력으로 들어왔다" <<endl;
                 bool imu_prop_cov = false;
                 effct_feat_num = 0;
 
@@ -1300,6 +1313,7 @@ int main(int argc, char **argv) {
                 dump_lio_state_to_log(fp);
             }
         }
+        cout << "main if문 <sync_packages(Measures)>에 진입 실패" <<endl;
         rate.sleep();
     }
     //--------------------------save map-----------------------------------
