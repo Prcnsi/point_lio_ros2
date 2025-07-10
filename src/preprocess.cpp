@@ -61,71 +61,96 @@ Preprocess::~Preprocess() {}
 // }
 
 void Preprocess::process(const sensor_msgs::msg::PointCloud2::SharedPtr &msg, PointCloudXYZI::Ptr &pcl_out) {
-    mid360_handler(msg);
+    avia_handler(msg);
     *pcl_out = pl_surf;
 }
 
-void Preprocess::mid360_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
-  pl_surf.clear();
-  pl_corn.clear();
-  pl_full.clear();
+// void Preprocess::mid360_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
+//   pl_surf.clear();
+//   pl_corn.clear();
+//   pl_full.clear();
 
-  pcl::PointCloud<PointXYZIT> pl_raw;
-  pcl::fromROSMsg(*msg, pl_raw);
-  pl_surf.reserve(pl_raw.points.size());
+//   pcl::PointCloud<> pl_raw;
+//   pcl::fromROSMsg(*msg, pl_raw);
+//   pl_surf.reserve(pl_raw.points.size());
 
-  double head_time = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
-  for (auto &p : pl_raw.points) {
-    PointType pt;
-    pt.x = p.x; pt.y = p.y; pt.z = p.z;
-    pt.intensity = p.intensity;
-    pt.curvature = (p.time) * time_unit_scale;  
-    pl_surf.push_back(pt);
-  }
-}
-
-// void Preprocess::avia_handler(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg) {
-//     pl_surf.clear();
-//     pl_corn.clear();
-//     pl_full.clear();
-//     double t1 = omp_get_wtime();
-//     int plsize = msg->point_num;
-
-//     pl_corn.reserve(plsize);
-//     pl_surf.reserve(plsize);
-//     pl_full.resize(plsize);
-
-//     uint valid_num = 0;
-
-//     for (uint i = 1; i < plsize; i++) {
-//         if ((msg->points[i].line < N_SCANS) &&
-//             ((msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00)) {
-//             valid_num++;
-//             if (valid_num % point_filter_num == 0) {
-//                 pl_full[i].x = msg->points[i].x;
-//                 pl_full[i].y = msg->points[i].y;
-//                 pl_full[i].z = msg->points[i].z;
-//                 pl_full[i].intensity = msg->points[i].reflectivity;
-//                 pl_full[i].curvature = msg->points[i].offset_time /
-//                                        float(1000000); // use curvature as time of each laser points, curvature unit: ms
-
-//                 if (i == 0) pl_full[i].curvature = fabs(pl_full[i].curvature) < 1.0 ? pl_full[i].curvature : 0.0;
-//                 else pl_full[i].curvature =
-//                              fabs(pl_full[i].curvature - pl_full[i - 1].curvature) < 1.0 ? pl_full[i].curvature :
-//                              pl_full[i - 1].curvature + 0.004166667f;
-
-//                 if ((abs(pl_full[i].x - pl_full[i - 1].x) > 1e-7)
-//                     || (abs(pl_full[i].y - pl_full[i - 1].y) > 1e-7)
-//                     || (abs(pl_full[i].z - pl_full[i - 1].z) > 1e-7)
-//                        && (pl_full[i].x * pl_full[i].x + pl_full[i].y * pl_full[i].y + pl_full[i].z * pl_full[i].z >
-//                            (blind * blind))) {
-//                     pl_surf.push_back(pl_full[i]);
-//                 }
-//             }
-//         }
-//     }
-
+//   double head_time = msg->header.stamp.sec + msg->header.stamp.nanosec * 1e-9;
+//   for (auto &p : pl_raw.points) {
+//     PointType pt;
+//     pt.x = p.x; pt.y = p.y; pt.z = p.z;
+//     pt.intensity = p.intensity;
+//     pt.curvature = (p.time) * time_unit_scale;  
+//     pl_surf.push_back(pt);
+//   }
 // }
+
+void Preprocess::avia_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
+    // 1. 초기화
+    pl_surf.clear();
+    pl_corn.clear();
+    pl_full.clear();
+
+    // 2. 포인트 개수 계산 (height=1이면 width 만큼)
+    int plsize = msg->width * msg->height;
+    if (plsize <= 0) return;
+    pl_full.resize(plsize);
+    pl_surf.reserve(plsize);
+    pl_corn.reserve(plsize);
+
+    // 3. PointCloud2 데이터 파싱을 위한 iterators 설정
+    sensor_msgs::PointCloud2ConstIterator<float> it_x(*msg, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> it_y(*msg, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> it_z(*msg, "z");
+    sensor_msgs::PointCloud2ConstIterator<float> it_int(*msg, "intensity");
+    sensor_msgs::PointCloud2ConstIterator<uint8_t> it_tag(*msg, "tag");
+    sensor_msgs::PointCloud2ConstIterator<uint8_t> it_line(*msg, "line");
+    sensor_msgs::PointCloud2ConstIterator<double> it_ts(*msg, "timestamp");
+
+    unsigned int valid_num = 0;
+    // 4. 포인트 순회
+    for (int i = 0; i < plsize; ++i, ++it_x, ++it_y, ++it_z, ++it_int, ++it_tag, ++it_line, ++it_ts) {
+        // Livox Mid360 전처리 조건: 스캔라인 범위 및 tag 필터
+        uint8_t line = *it_line;
+        uint8_t tag = *it_tag;
+        if (line < N_SCANS && (((tag & 0x30) == 0x10) || ((tag & 0x30) == 0x00))) {
+            valid_num++;
+            // point_filter_num 으로 샘플링
+            if (valid_num % point_filter_num == 0) {
+                // 좌표 및 intensity 복사
+                pl_full[i].x = *it_x;
+                pl_full[i].y = *it_y;
+                pl_full[i].z = *it_z;
+                pl_full[i].intensity = *it_int;
+                // 곡률(시간) 계산: timestamp (예: 마이크로초 단위로 가정) -> ms 단위로 변환
+                float time_ms = float(*it_ts) / 1000000.0f;
+                pl_full[i].curvature = time_ms;
+                // 첫 점에 대한 보정 (절댓값이 1.0ms 초과 시 0으로)
+                if (i == 0) {
+                    if (std::fabs(pl_full[i].curvature) >= 1.0f)
+                        pl_full[i].curvature = 0.0f;
+                } else {
+                    // 이전 점과의 시간 차이가 1.0ms 이상이면 연속성을 가정
+                    float dt = std::fabs(pl_full[i].curvature - pl_full[i-1].curvature);
+                    if (dt >= 1.0f) {
+                        pl_full[i].curvature = pl_full[i-1].curvature + 0.004166667f;
+                    }
+                }
+                // 좌표 변화량 및 거리 필터: 이전 포인트와 거의 동일하거나 가까우면 제외
+                if (i > 0) {
+                    bool moved = (std::fabs(pl_full[i].x - pl_full[i-1].x) > 1e-7f) ||
+                                 (std::fabs(pl_full[i].y - pl_full[i-1].y) > 1e-7f) ||
+                                 (std::fabs(pl_full[i].z - pl_full[i-1].z) > 1e-7f);
+                    float range2 = pl_full[i].x * pl_full[i].x +
+                                   pl_full[i].y * pl_full[i].y +
+                                   pl_full[i].z * pl_full[i].z;
+                    if (moved && range2 > (blind * blind)) {
+                        pl_surf.push_back(pl_full[i]);
+                    }
+                }
+            }
+        }
+    }
+}
 
 void Preprocess::oust64_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg) {
     pl_surf.clear();

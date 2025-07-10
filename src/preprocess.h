@@ -160,9 +160,7 @@ public:
 
 
 private:
-    void mid360_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg);
-
-    // void avia_handler(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg);
+    void avia_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg);
 
     void oust64_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &msg);
 
