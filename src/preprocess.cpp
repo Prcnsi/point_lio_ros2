@@ -39,7 +39,7 @@ Preprocess::~Preprocess() {}
 // }
 
 void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::SharedPtr &msg, PointCloudXYZI::Ptr &pcl_out) {
-    avia_handler(msg);
+    mid360_handler(msg);
     *pcl_out = pl_surf;
 }
 
