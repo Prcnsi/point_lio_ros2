@@ -45,13 +45,6 @@ struct orgtype {
     }
 };
 
-struct PointXYZIT {
-  PCL_ADD_POINT4D;
-  float intensity;
-  float time;
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-};
-
 
 namespace velodyne_ros {
     struct EIGEN_ALIGN16 Point {
