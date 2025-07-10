@@ -198,8 +198,6 @@ void lasermap_fov_segment() {
 }
 
 void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-    double lidar_time = get_time_sec(msg->timestamp);
-    cout << "[lidar_cbk] timestamp: " << lidar_time << std::endl;
     mtx_buffer.lock();
     scan_count++;
     double preprocess_start_time = omp_get_wtime();
@@ -344,8 +342,6 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 
 void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
     cout <<"imu_cbk 진입"<<std::endl;
-    double timestamp = get_time_sec(msg->timestamp);
-    cout << "[imu_cbk] timestamp: " << timestamp << std::endl;
     publish_count++;
     sensor_msgs::msg::Imu::SharedPtr msg(new sensor_msgs::msg::Imu(*msg_in));
 
