@@ -267,6 +267,7 @@ void lasermap_fov_segment() {
 // }
 
 void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg) {
+    cout <<"livox_pcl_cbk 진입"<<std::endl;
     mtx_buffer.lock();
     double preprocess_start_time = omp_get_wtime();
     scan_count++;
@@ -279,11 +280,13 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg) {
     }
 
     last_timestamp_lidar = get_time_sec(msg->header.stamp);
+    cout <<"livox_pcl_cbk에서 lidar timestamp 잘 받아옴"<<std::endl;
 
     PointCloudXYZI::Ptr ptr(new PointCloudXYZI());
     PointCloudXYZI::Ptr ptr_div(new PointCloudXYZI());
     p_pre->process(msg, ptr);
     double time_div = get_time_sec(msg->header.stamp);
+    cout <<"livox_pcl_cbk에서 lidar timestamp 잘 받아옴"<<std::endl;
     if (cut_frame) {
         sort(ptr->points.begin(), ptr->points.end(), time_list);
 
@@ -327,6 +330,8 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg) {
             frame_ct = 0;
         }
     } else {
+        // 실제로 livox/lidar를 subscribe해서 lidar 버퍼에 추가
+        cout <<"livox/lidar 값 잘 append함 !!"<<std::endl;
         lidar_buffer.emplace_back(ptr);
         time_buffer.emplace_back(get_time_sec(msg->header.stamp));
     }
@@ -336,6 +341,7 @@ void livox_pcl_cbk(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg) {
 }
 
 void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
+    cout <<"imu_cbk 진입"<<std::endl;
     publish_count++;
     sensor_msgs::msg::Imu::SharedPtr msg(new sensor_msgs::msg::Imu(*msg_in));
 
@@ -356,6 +362,7 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
     last_timestamp_imu = timestamp;
     mtx_buffer.unlock();
     sig_buffer.notify_all();
+    cout <<"imu_deque에 데이터 잘 append함!"<<std::endl;
 }
 
 bool sync_packages(MeasureGroup &meas) {
