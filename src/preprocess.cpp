@@ -43,6 +43,7 @@ Preprocess::~Preprocess() {}
 //     *pcl_out = pl_surf;
 // }
 
+// lidar data만 전처리하는 함수
 void Preprocess::process(const sensor_msgs::msg::PointCloud2::SharedPtr &msg, PointCloudXYZI::Ptr &pcl_out) {
     avia_handler(msg);
     *pcl_out = pl_surf;

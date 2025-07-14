@@ -198,23 +198,35 @@ void lasermap_fov_segment() {
 }
 
 void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    // LiDAR 데이터를 저장하는 버퍼에 접근하므로 스레드 충돌 방지를 위해 락(lock)을 건다
     mtx_buffer.lock();
     scan_count++;
+    // 전처리 시간 측정을 위한 시작 시간 기록
     double preprocess_start_time = omp_get_wtime();
+
+    // 타임스탬프가 이전보다 작으면 (즉, 시간이 거꾸로 됨 = 루프백 또는 센서 재시작)
     if (get_time_sec(msg->header.stamp) < last_timestamp_lidar) {
         RCLCPP_ERROR(logger, "lidar loop back, clear buffer");
         // lidar_buffer.shrink_to_fit();
 
+        // 오류 로그 출력 후 락을 해제하고 콜백 종료
         mtx_buffer.unlock();
         sig_buffer.notify_all();
         return;
     }
 
+    // 현재 메시지의 시간(sec 단위)을 기록하여 다음 메시지와 비교할 기준으로 사용
     last_timestamp_lidar = msg->header.stamp.sec;
 
+    // 전처리 결과를 담을 포인트 클라우드 객체를 동적으로 생성
     PointCloudXYZI::Ptr ptr(new PointCloudXYZI());
     PointCloudXYZI::Ptr ptr_div(new PointCloudXYZI());
+
+    // 현재 메시지의 정확한 시간(초 단위)을 받아옴
     double time_div = get_time_sec(msg->header.stamp);
+    // 전처리기(p_pre) 객체를 통해 LiDAR 메시지를 전처리하여 ptr에 저장
+    // p_pre가 이미 Preprocess 클래스의 인스턴스를 가리키고 있어서 process만 호출해도 됨
+    //     => shared_ptr<Preprocess> p_pre;. p_pre.reset(new Preprocess());
     p_pre->process(msg, ptr);
     if (cut_frame) {
         sort(ptr->points.begin(), ptr->points.end(), time_list);
