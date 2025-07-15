@@ -855,7 +855,7 @@ int main(int argc, char **argv) {
                 ("/odom_corrected", 100000);
     } else {
         pubOdomAftMapped = nh->create_publisher<nav_msgs::msg::Odometry>
-                ("/aft_mapped_to_init", 100000);
+                ("/odom", 100000);
     }
 
     //auto plane_pub = nh->create_publisher<visualization_msgs::msg::Marker>
