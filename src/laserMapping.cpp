@@ -435,7 +435,9 @@ bool sync_packages(MeasureGroup &meas) {
                 end_time = pt.curvature;
             }
         }
-        lidar_end_time = meas.lidar_beg_time + end_time / double(1000);
+        // end_time(culvature)는 이렇게 1000 곱해뒀어서 다시 1000으로 나누는 것
+        // added_pt.curvature = (pt.timestamp - time_head) * 1000.0; // s -> ms  <----
+        lidar_end_time = meas.lidar_beg_time + end_time / double(1000); // ms ->s
 
         meas.lidar_last_time = lidar_end_time;
         lidar_pushed = true;
@@ -444,7 +446,7 @@ bool sync_packages(MeasureGroup &meas) {
     if (last_timestamp_imu < lidar_end_time) {
         cout << "[sync_packages] last_timestamp_imu: " << last_timestamp_imu 
         << ", lidar_end_time: " << lidar_end_time 
-        << ", diff: " << (last_timestamp_imu - lidar_end_time) << " sec" << std::endl;
+        << ", diff: " << (lidar_end_time - last_timestamp_imu) << " sec" << std::endl;
         cout<<"LiDAR와 IMU 시간이 안 맞아서 종료" <<std::endl;
         return false;
     }
