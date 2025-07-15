@@ -353,7 +353,7 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 // }
 
 void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
-    cout <<"imu_cbk 진입"<<std::endl;
+    // cout <<"imu_cbk 진입"<<std::endl;
     publish_count++;
     sensor_msgs::msg::Imu::SharedPtr msg(new sensor_msgs::msg::Imu(*msg_in));
 
@@ -374,12 +374,12 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg_in) {
     last_timestamp_imu = timestamp;
     mtx_buffer.unlock();
     sig_buffer.notify_all();
-    cout <<"imu_deque에 데이터 잘 append함!"<<std::endl;
+    // cout <<"imu_deque에 데이터 잘 append함!"<<std::endl;
 }
 
 bool sync_packages(MeasureGroup &meas) {
-    cout << "sync sync_packages 진입" <<std::endl;
-    cout << std::fixed << std::setprecision(9);
+    // cout << "sync sync_packages 진입" <<std::endl;
+    // cout << std::fixed << std::setprecision(9);
 
     // imu 안 쓰는 경우 - 어차피 imu 써서 주석처리
     // if (!imu_en) {
@@ -444,10 +444,8 @@ bool sync_packages(MeasureGroup &meas) {
     }
 
     if (last_timestamp_imu < lidar_end_time) {
-        cout << "[sync_packages] last_timestamp_imu: " << last_timestamp_imu 
-        << ", lidar_end_time: " << lidar_end_time 
-        << ", diff: " << (lidar_end_time - last_timestamp_imu) << " sec" << std::endl;
-        cout<<"LiDAR와 IMU 시간이 안 맞아서 종료" <<std::endl;
+        //cout << "[sync_packages] last_timestamp_imu: " << last_timestamp_imu<< ", lidar_end_time: " << lidar_end_time << ", diff: " << (lidar_end_time - last_timestamp_imu) << " sec" << std::endl;
+        //cout<<"LiDAR와 IMU 시간이 안 맞아서 종료" <<std::endl;
         return false;
     }
     /*** push imu data, and pop from imu buffer ***/
@@ -465,7 +463,7 @@ bool sync_packages(MeasureGroup &meas) {
             imu_next = *(imu_deque.front());
             imu_deque.pop_front();
         }
-        cout <<"imu-lidar 시간 동기화 완료"<<std::endl;
+        // cout <<"imu-lidar 시간 동기화 완료"<<std::endl;
     } else if (!init_map) { 
         // 맵 초기화가 필요할 때(IMU 데이터가 초기화되어야 할 때), 
         // IMU 데이터를 imu_deque에서 꺼내어 meas.imu에 추가하고, 
@@ -483,7 +481,7 @@ bool sync_packages(MeasureGroup &meas) {
             imu_next = *(imu_deque.front());
             imu_deque.pop_front();
         }
-        cout <<"imu-map 시간 동기화 완료"<<std::endl;
+        // cout <<"imu-map 시간 동기화 완료"<<std::endl;
     }
 
     lidar_buffer.pop_front();
@@ -683,7 +681,7 @@ void set_twist(T &out) {
 
 void publish_odometry(const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr &pubOdomAftMapped,
                       std::shared_ptr<tf2_ros::TransformBroadcaster> &tf_br) {
-
+    std::cout << "=====> publish_odometry 호출됨!" << std::endl;
     odomAftMapped.header.frame_id = odom_header_frame_id;
     odomAftMapped.child_frame_id = odom_child_frame_id;
 
@@ -717,6 +715,14 @@ void publish_odometry(const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPt
         odomAftMapped.twist.covariance[35] = 0.05;  // Covariance for angular velocity (yaw)
     }
 
+    std::cout << "[ODOM pos] "
+          << odomAftMapped.pose.pose.position.x << ", "
+          << odomAftMapped.pose.pose.position.y << ", "
+          << odomAftMapped.pose.pose.position.z << std::endl;
+
+    std::cout << "[ODOM stamp] " << odomAftMapped.header.stamp.sec << "." << odomAftMapped.header.stamp.nanosec << std::endl;
+
+    std::cout << "[ODOM frame] " << odomAftMapped.header.frame_id << " -> " << odomAftMapped.child_frame_id << std::endl;
     pubOdomAftMapped->publish(odomAftMapped);
 
     //static tf2_ros::TransformBroadcaster br = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
@@ -860,14 +866,13 @@ int main(int argc, char **argv) {
     rclcpp::Rate rate(5000);
     while (rclcpp::ok()) {
         if (flg_exit) break;
-        cout << "inside main while loop" << endl;
         //ros::spinOnce();
         rclcpp::executors::SingleThreadedExecutor executor;
         executor.add_node(nh);
         executor.spin_some(); // 处理当前可用的回调
 
         if (sync_packages(Measures)) {
-            cout << "main if문 <sync_packages(Measures)>에는 진입 성공" <<endl;
+            // cout << "main if문 <sync_packages(Measures)>에는 진입 성공" <<endl;
             if (flg_first_scan) {
                 first_lidar_time = Measures.lidar_beg_time;
                 flg_first_scan = false;
@@ -936,7 +941,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            cout << "imu 체크 조건문까지 완료" <<endl;
+            // cout << "imu 체크 조건문까지 완료" <<endl;
             /*** Segment the map in lidar FOV ***/
             lasermap_fov_segment();
             /*** downsample the feature points in a scan ***/
@@ -952,7 +957,7 @@ int main(int argc, char **argv) {
             time_seq = time_compressing<int>(feats_down_body);
             feats_down_size = feats_down_body->points.size();
 
-            cout << "lidar FOV segment까지 완료" <<endl;
+            // cout << "lidar FOV segment까지 완료" <<endl;
             /*** initialize the map kdtree ***/
             if (!init_map) {
                 if (ikdtree.Root_Node == nullptr) //
@@ -982,14 +987,14 @@ int main(int argc, char **argv) {
 
             t2 = omp_get_wtime();
 
-            cout << "Kalman filter update 완료" <<endl;
+            // cout << "Kalman filter update 완료" <<endl;
             /*** iterated state estimation ***/
             crossmat_list.reserve(feats_down_size);
             pbody_list.reserve(feats_down_size);
             // pbody_ext_list.reserve(feats_down_size);
 
             for (size_t i = 0; i < feats_down_body->size(); i++) {
-                cout << "반복적인 state estimation 시작" <<endl;
+                // cout << "반복적인 state estimation 시작" <<endl;
                 V3D point_this(feats_down_body->points[i].x,
                                feats_down_body->points[i].y,
                                feats_down_body->points[i].z);
@@ -1009,7 +1014,7 @@ int main(int argc, char **argv) {
             }
 
             if (!use_imu_as_input) {
-                cout << "imu가 input으로 안 들어왔다" <<endl;
+                // cout << "imu가 input으로 안 들어옴" <<endl;
                 bool imu_upda_cov = false;
                 effct_feat_num = 0;
                 /**** point by point update ****/
@@ -1149,7 +1154,7 @@ int main(int argc, char **argv) {
                     // cout << "pbp output effect feat num:" << effct_feat_num << endl;
                 }
             } else {
-                cout << "imu가 입력으로 들어왔다" <<endl;
+                // cout << "imu가 입력으로 잘 들어옴" <<endl;
                 bool imu_prop_cov = false;
                 effct_feat_num = 0;
 
