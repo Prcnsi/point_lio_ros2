@@ -89,6 +89,8 @@ void Preprocess::avia_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &ms
 
         // 각 포인트에 대해 거리를 계산하여 일정 범위 내의 포인트들만 사용하도록 필터링
         const auto& pt = pl_orig.points[i];
+        cout <<"msg->header.stamp.sec: "<< msg->header.stamp.sec
+             << "pt.timestamp: "<<pt.timestamp<<std::endl;
         double range = pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
         if (range < (blind * blind)) continue;
 
@@ -103,7 +105,6 @@ void Preprocess::avia_handler(const sensor_msgs::msg::PointCloud2::SharedPtr &ms
         added_pt.normal_z = 0;
         //  각 포인트가 측정된 시점이 첫 번째 포인트에서 얼마나 떨어져 있는지를 시간적으로 표현
         added_pt.curvature = (pt.timestamp - time_head) * 1000.0; // ns -> ms  <----
-
         pl_surf.push_back(added_pt);
     }
 }
